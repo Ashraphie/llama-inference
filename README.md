@@ -13,7 +13,7 @@ The backend engine used for generation is `vLLM`, for a couple of reasons:
 
 - Memory Efficiency; Thanks to its efficient implementation of Paged-Attention, vLLM manages attention memory usage significantly better than naïve implementations. This allows handling of longer contexts without exhausting GPU memory.
 
-- Inherent Compilation; vLLM leverages CUDA Graph capture (or ROCm Graphs on AMD) to compile execution traces of the model. This reduces kernel launch overhead, improves determinism, and results in faster and more memory-efficient generation.
+- Inherent Compilation; vLLM leverages CUDA Graph capture to compile execution traces of the model. This reduces kernel launch overhead, improves determinism, and results in faster and more memory-efficient generation.
 
 - Optimized KV-Cache Management; Its KV-Cache implementation is carefully optimized for both speed and memory locality, ensuring minimal overhead when reusing cached key/value states across decoding steps.
 
@@ -124,3 +124,4 @@ The final answer is listing the top two answers correctly. Still, it is unable t
 - Improved evaluation metrics (better critic, Perplexity score, more fluid metrics that evaluate at formatting of generation, the reasoning step correctness, ...
 - Add speculative decoding to generation (may not be beneficial due to size of the model)
 - Combine the evaluate.py and generate.py in a single script (launcher.py for example).
+
