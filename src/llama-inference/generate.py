@@ -5,8 +5,8 @@ import multiprocessing as mp
 import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
+from .data import AA_LCR
 from tqdm import tqdm
-from data import AA_LCR
 from vllm import LLM, SamplingParams
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "true")
@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument("--top-p", type=float, default=0.95, help="Top-p nucleus sampling.")
     parser.add_argument("--top-k", type=int, default=10, help="Top-k sampling (<=0 disables).")
     parser.add_argument("--output-json", type=str, default="outputs.json", help="Path to save JSON results.")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
     return parser.parse_args()
 
 def worker_init_fn(_):
@@ -49,6 +50,7 @@ def collate_chat(batch):
 
 def main():
     args = parse_args()
+    torch.manual_seed(args.seed)
     NUM_GPUS = torch.cuda.device_count()
 
     aa_lcr = AA_LCR()

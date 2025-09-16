@@ -128,17 +128,17 @@ class Evaluation(Dataset):
             "content": (
                 "You are a useful model critic. Evaluate the accuracy of the model's answer based on the "
                 "provided ground truth answer. You will be given a question, the model's answer, and the "
-                "ground truth answer. Respond ONLY with CORRECT or INCORRECT."
+                "ground truth answer.\n\nRespond ONLY with CORRECT or INCORRECT."
             ),
         }
         user_msg = {
             "role": "user",
             "content": (
-                f"Assess whether the following CANDIDATE ANSWER is CORRECT or INCORRECT. "
-                f"For the CANDIDATE ANSWER to be correct, it must be consistent with the OFFICIAL ANSWER. "
-                f"The question (for reference only): {question} "
-                f"OFFICIAL ANSWER: {official_answer} "
-                f"CANDIDATE ANSWER TO ASSESS: {candidate_answer} "
+                f"Assess whether the following CANDIDATE ANSWER is CORRECT or INCORRECT. \n\n"
+                f"For the CANDIDATE ANSWER to be correct, it must be consistent with the OFFICIAL ANSWER. \n\n"
+                f"The question (for reference only): {question} \n"
+                f"OFFICIAL ANSWER: {official_answer} \n"
+                f"CANDIDATE ANSWER TO ASSESS: {candidate_answer} \n\n"
                 f"Reply only with CORRECT or INCORRECT."
             ),
         }

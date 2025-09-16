@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+src/llama-inference/__init__.py
+src/llama-inference/data.py
+src/llama-inference/generate.py
+src/llama-inference/evaluate/offline.py
+src/llama-inference/evaluate/openrouter.py
+src/llama_inference.egg-info/PKG-INFO
+src/llama_inference.egg-info/SOURCES.txt
+src/llama_inference.egg-info/dependency_links.txt
+src/llama_inference.egg-info/top_level.txt

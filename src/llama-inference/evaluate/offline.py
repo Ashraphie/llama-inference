@@ -1,5 +1,5 @@
 import argparse
-from data import Evaluation
+from ..data import Evaluation
 from tqdm import tqdm
 import torch
 from vllm import LLM, SamplingParams
