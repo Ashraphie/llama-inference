@@ -29,12 +29,12 @@ The script lets you select the following parameters: `batch-size`, `num-workers`
 
 ### evaluate.py design
 
-The evaluation code uses a critic model (I used the same `meta-llama/Llama-3.1-8B-Instruct` model due to disk space and memory constraints as some sort of proof of concept, but as the `AA-LCR` authors also suggested, it is better to use more accurate models such as Qwen3 series of models, gpt-5, or Deepseek V3) 
+ The evaluation code uses a critic model. I have implemented two evaluation codes; one is using openrouter.ai API for critic model and the other uses offline vllm. For the offline vllm, I used the same `meta-llama/Llama-3.1-8B-Instruct` model due to disk space and memory constraints as some sort of proof of concept. For OpenRouter one, any arbitrary model that exist on on OpenRouter can be used. (As the `AA-LCR` authors also suggested, it is better to use more accurate models such as Qwen3 series of models, gpt-5, or Deepseek V3).
 The reason for choosing the critic model was again the design of the AA-LCR dataset; it has non-structured answers (compared to MMLU, which has A, B, C, D as the final answer), so extracting the exact final answer was tricky.
 I tried enforcing the format of the model's output with detailed prompting (will discuss this in the next section), but the model failed to follow the exact instructions. 
-Hence, I decided to use the same vLLM generation logic to obtain the generated answer and the ground-truth, and then ask a critic model to verify its correctness (which proved to be somewhat successful). 
+Hence, I decided to use the same generation logic to obtain the generated answer and the ground-truth, and then ask a critic model to verify its correctness (which proved to be somewhat successful). 
 
-As the metric, since each generation is marked with `CORRECT` or `INCORRECT`, I have chosen the fundamental Accuracy metric, which is being printed at the end.
+As the metric, since each generation is marked with `CORRECT` or `INCORRECT`, I have chosen the fundamental Accuracy metric, which is being printed and logged at the end.
 
 ### data.py design
 
@@ -54,8 +54,15 @@ The pip installations are included in the `requirements.txt` file, and can be in
 ```
 pip install -r requirements.txt --no-cache-dir
 ```
+
 I am specifically using `vLLM==0.7.4`, `torch==2.7.0`, and `transformers==4.51.0`, but other versions may work. 
 Additionally, as I have had experience previously, vLLM may be required to build from source for specific hardware architectures.
+
+Also install the repo as a package:
+
+```
+pip install -e .
+```
 
 To get access to the Llama series of models from HuggingFace, a HuggingFace token with approved access is required.
 Once you obtain the token, you can log in to HuggingFace to download the model and the dataset:
@@ -92,22 +99,28 @@ Where the <snapshot-tag> is a unique folder in the dataset, which could vary bet
 To run the generation:
 
 ```
-python generate.py
+python -m llama-inference.generate
 ```
 
 Which saved a JSON file with the final generations. The input arguments can be checked via `python generate.py --help` (they are briefly explained above). To run the evaluation:
 
+1. offline
+
 ```
-python evaluate.py --input-json <path-to-your-generated-json-file>
+python -m llama-inference.evaluate.offline --input-json <path-to-your-generated-json-file> --output-json <arbitrary-output-name>
 ```
+
+2. OpenRouter
+
+```
+python -m llama-inference.evaluate.openrouter --input-json <path-to-your-generated-json-file> --api-key <openrouter-api-key> --model-id <open-router-model-id> --output-json <arbitrary-output-name>
+```
+
 This prints the final accuracy after the script is done. 
 
 ## Results and Discussion
 
-After 5 iterations of the eval (I have included two generation outputs in the outputs_example folder), the final accuracy was ~26%, which could mean two things:
-
-1. Llama3.1 8B is performing poorly in the reasoning tasks.
-2. The evaluation setup (the benchmark itself, the critic model, system prompt) could be designed better.
+After 5 iterations of the eval (I have included two generation outputs in the outputs_example folder), the final accuracy was ~26% with llama3.1 8B as the judge, and ~9% with DeepSeek V3.1 (openrouter) which could mean two things:
    
 Going through the accuracy of the critic, I saw that in most cases, the critic is tagging the correct answer correctly. 
 
@@ -124,4 +137,5 @@ The final answer is listing the top two answers correctly. Still, it is unable t
 - Improved evaluation metrics (better critic, Perplexity score, more fluid metrics that evaluate at formatting of generation, the reasoning step correctness, ...
 - Add speculative decoding to generation (may not be beneficial due to size of the model)
 - Combine the evaluate.py and generate.py in a single script (launcher.py for example).
+
 
