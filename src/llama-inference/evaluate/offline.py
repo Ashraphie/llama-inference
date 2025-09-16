@@ -6,6 +6,7 @@ from vllm import LLM, SamplingParams
 import multiprocessing as mp
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
+import json
 
 
 MODEL_ID = "meta-llama/Meta-Llama-3.1-8B-Instruct"
@@ -17,8 +18,9 @@ def parse_args():
     parser.add_argument("--input-json", type=str, required=True, help="Path to JSON file with model generations.")
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size for DataLoader.")
     parser.add_argument("--num-workers", type=int, default=2, help="Number of DataLoader workers.")
-    
+    parser.add_argument("--output-json", type=str, required=True, help="Path to save results with prompts and verdicts.")
     return parser.parse_args()
+    
 def worker_init_fn(_):
     global TOKENIZER, MODEL_ID
     tok = AutoTokenizer.from_pretrained(MODEL_ID, use_fast=True)
@@ -52,7 +54,6 @@ def main():
     )
 
     output_json_file = args.input_json
-
     aa_lcr_eval = Evaluation(output_json_file, split="test")
 
     loader = DataLoader(
@@ -65,6 +66,7 @@ def main():
         worker_init_fn=worker_init_fn if args.num_workers > 0 else None,
         persistent_workers=(args.num_workers > 0),
     )
+
     eos_id = critic.get_tokenizer().eos_token_id
     sampling_params = SamplingParams(
         temperature=0,
@@ -74,15 +76,36 @@ def main():
 
     outputs_count = 0
     correct_count = 0
+    results_log = []
+
     for (_enc, prompts) in tqdm(loader, desc="Generating"):
-        results = critic.generate(prompts, sampling_params)
-        for out in results:
+        generations = critic.generate(prompts, sampling_params)
+
+        for prompt, out in zip(prompts, generations):
             text = out.outputs[0].text if out.outputs else ""
-            if text.strip() == "CORRECT":
+            verdict = text.strip()
+
+            # Human-readable logs
+            print("\n=== Prompt ===")
+            print(prompt)
+            print(f"--- Verdict: {verdict} ---\n")
+
+            if verdict == "CORRECT":
                 correct_count += 1
             outputs_count += 1
 
-    print(f"Final accuracy: {correct_count}/{outputs_count}")
+            results_log.append({
+                "prompt": prompt,
+                "verdict": verdict,
+            })
+
+    # Save detailed JSON log
+    with open(args.output_json, "w") as f:
+        json.dump(results_log, f, indent=2)
+
+    print(f"\nFinal accuracy: {correct_count}/{outputs_count}")
+    print(f"Saved detailed results to {args.output_json}")
+    
 if __name__ == "__main__":
     try:
         mp.set_start_method("spawn", force=True)
